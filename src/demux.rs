@@ -110,7 +110,7 @@ named!(ivf_header<&[u8], IvfHeader>,
            tag!("DKIF")
            >> version: parse_u16
            >> _length: parse_u16
-           >> tag!("VP80")
+           >> alt!( tag!("VP80") | tag!("VP90") | tag!("AV10"))
            >> width: parse_u16
            >> height: parse_u16
            >> rate: parse_u32
@@ -154,7 +154,7 @@ pub const IVF_DESC: &Descriptor = &Des {
         name: "ivf-rs",
         demuxer: "ivf",
         description: "Nom-based Ivf demuxer",
-        extensions: &[],
+        extensions: &["vp8", "vp9", "av1"],
         mime: &[],
     },
 };
@@ -167,8 +167,7 @@ mod tests {
     use std::io::Cursor;
 
     const IVF: &'static [u8] = include_bytes!("../assets/vp80-00-comprehensive-001.ivf");
-    // const IVF: &'static [u8] = include_bytes!("../assets/vp80-05-sharpness-1428.ivf");
-    // const IVF: &'static [u8] = include_bytes!("aaaaaa"); // FIXME rustc bug
+
     #[test]
     fn demux() {
         let d = IVF_DESC.create();
