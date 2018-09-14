@@ -1,3 +1,10 @@
+//!
+//! Implement the demuxer trait from av-format and expose all the correct
+//! abstraction to handle them. Refer to the `Demuxer` trait for more info.
+//!
+//! Internally the parsing is implement with the `nom` parser
+//!
+
 use av_bitstream::byteread::*;
 use av_data::packet::Packet;
 use av_data::timeinfo::TimeInfo;
@@ -14,7 +21,7 @@ use common::Codec;
 #[derive(Default)]
 pub struct IvfDemuxer {
     header: Option<IvfHeader>,
-    pub queue: VecDeque<Event>,
+    queue: VecDeque<Event>,
 }
 
 #[derive(Debug)]
@@ -29,8 +36,8 @@ pub struct IvfHeader {
 
 #[derive(Debug)]
 pub struct IvfFrame {
-    pos: u64,
     size: u32,
+    pos: u64,
     data: Vec<u8>,
 }
 
@@ -92,27 +99,32 @@ impl Demuxer for IvfDemuxer {
     }
 }
 
+/// take data ownership
 pub fn parse_binary_data(input: &[u8], size: u64) -> IResult<&[u8], Vec<u8>> {
     do_parse!(input, s: take_s!(size as usize) >> (s.to_owned()))
 }
 
+/// u16 nom help function that maps to av-bitstream
 pub fn parse_u16(input: &[u8]) -> IResult<&[u8], u16> {
     Ok((&input[2..], get_u16l(&input[0..2])))
 }
 
+/// u32 nom help function that maps to av-bitstream
 pub fn parse_u32(input: &[u8]) -> IResult<&[u8], u32> {
     Ok((&input[4..], get_u32l(&input[0..4])))
 }
 
+/// u64 nom help function that maps to av-bitstream
 pub fn parse_u64(input: &[u8]) -> IResult<&[u8], u64> {
     Ok((&input[8..], get_u64l(&input[0..8])))
 }
 
+/// use ErrorKind::Tag that could be a bit confusing
 pub fn parse_codec(input: &[u8]) -> IResult<&[u8], Codec> {
     let codec = match &input[0..4] {
         b"VP80" => Codec::VP8,
         b"VP90" => Codec::VP9,
-        b"AV1" => Codec::AV1,
+        b"AV10" => Codec::AV1,
         _ => return Err(nom::Err::Error(error_position!(&input[0..4], ErrorKind::Tag)))
     };
 
@@ -164,6 +176,7 @@ impl Descriptor for Des {
     }
 }
 
+/// used by av context
 pub const IVF_DESC: &Descriptor = &Des {
     d: Descr {
         name: "ivf-rs",

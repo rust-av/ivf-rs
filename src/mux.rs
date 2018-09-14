@@ -1,3 +1,9 @@
+//!
+//! Implement the muxer trait from av-format and expose all the correct
+//! abstraction to handle them. Refer to the `Muxer` trait for more info.
+//!
+//!
+
 use av_data::packet::Packet;
 use av_data::value::Value;
 use av_format::common::GlobalInfo;
