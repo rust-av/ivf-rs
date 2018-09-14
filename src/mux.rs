@@ -52,7 +52,13 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn write_packet(&mut self, _buf: &mut Vec<u8>, _pkt: Arc<Packet>) -> Result<()> {
+    fn write_packet(&mut self, buf: &mut Vec<u8>, pkt: Arc<Packet>) -> Result<()> {
+        let mut frame_header = [0; 12];
+        put_u32l(&mut frame_header[0..=4], pkt.data.len() as u32);
+        if let Some(pos) = pkt.pos {
+            put_u64l(&mut frame_header[5..], pos as u64);
+        }
+        buf.extend(&pkt.data);
         Ok(())
     }
 
