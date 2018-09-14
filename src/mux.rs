@@ -8,23 +8,32 @@ use std::sync::Arc;
 use av_bitstream::bytewrite::*;
 use std::io::Write;
 
+#[derive(Default, Debug)]
 pub struct IvfMuxer {
     version: u16,
     width: u16,
     height: u16,
     rate: u32,
     scale: u32,
+    codec: Codec
+}
+
+#[derive(Debug)]
+pub enum Codec {
+    VP8,
+    VP9,
+    AV1
+}
+
+impl Default for Codec {
+    fn default() -> Codec {
+        Codec::VP8
+    }
 }
 
 impl IvfMuxer {
     pub fn new() -> IvfMuxer {
-        IvfMuxer {
-            version: 0,
-            width: 0,
-            height: 0,
-            rate: 0,
-            scale: 0,
-        }
+        Default::default()
     }
 }
 
@@ -34,15 +43,23 @@ impl Muxer for IvfMuxer {
     }
 
     fn write_header(&mut self, buf: &mut Vec<u8>) -> Result<()> {
+        trace!("Write muxer header: {:?}", self);
+
         buf.reserve(32);
         unsafe {
             buf.set_len(32);
         }
 
+        let codec = match self.codec {
+            Codec::VP8 => b"VP80",
+            Codec::VP9 => b"VP80",
+            Codec::AV1 => b"VP80",
+        };
+
         (&mut buf[0..=3]).write_all(b"DKIF")?;
         put_u16l(&mut buf[4..=5], self.version);
         put_u16l(&mut buf[6..=7], 32);
-        (&mut buf[8..=11]).write_all(b"AOM1")?;
+        (&mut buf[8..=11]).write_all(codec)?;
         put_u16l(&mut buf[12..=13], self.width);
         put_u16l(&mut buf[14..=15], self.height);
         put_u32l(&mut buf[16..=19], self.rate);
