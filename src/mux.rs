@@ -4,6 +4,7 @@ use av_format::common::GlobalInfo;
 use av_format::error::*;
 use av_format::muxer::Muxer;
 use std::sync::Arc;
+use common::Codec;
 
 use av_bitstream::bytewrite::*;
 use std::io::Write;
@@ -16,19 +17,6 @@ pub struct IvfMuxer {
     rate: u32,
     scale: u32,
     codec: Codec
-}
-
-#[derive(Debug)]
-pub enum Codec {
-    VP8,
-    VP9,
-    AV1
-}
-
-impl Default for Codec {
-    fn default() -> Codec {
-        Codec::VP8
-    }
 }
 
 impl IvfMuxer {
@@ -71,9 +59,9 @@ impl Muxer for IvfMuxer {
 
     fn write_packet(&mut self, buf: &mut Vec<u8>, pkt: Arc<Packet>) -> Result<()> {
         let mut frame_header = [0; 12];
-        put_u32l(&mut frame_header[0..=4], pkt.data.len() as u32);
+        put_u32l(&mut frame_header[0..=3], pkt.data.len() as u32);
         if let Some(pos) = pkt.pos {
-            put_u64l(&mut frame_header[5..], pos as u64);
+            put_u64l(&mut frame_header[3..], pos as u64);
         }
         buf.extend(&pkt.data);
         Ok(())

@@ -6,9 +6,10 @@ use av_format::common::GlobalInfo;
 use av_format::demuxer::{Demuxer, Event};
 use av_format::demuxer::{Descr, Descriptor};
 use av_format::error::*;
-use nom::{IResult, Offset};
+use nom::{IResult, Offset, ErrorKind};
 use std::collections::VecDeque;
 use std::io::SeekFrom;
+use common::Codec;
 
 #[derive(Default)]
 pub struct IvfDemuxer {
@@ -23,6 +24,7 @@ pub struct IvfHeader {
     height: u16,
     rate: u32,
     scale: u32,
+    codec: Codec
 }
 
 #[derive(Debug)]
@@ -106,19 +108,30 @@ pub fn parse_u64(input: &[u8]) -> IResult<&[u8], u64> {
     Ok((&input[8..], get_u64l(&input[0..8])))
 }
 
+pub fn parse_codec(input: &[u8]) -> IResult<&[u8], Codec> {
+    let codec = match &input[0..4] {
+        b"VP80" => Codec::VP8,
+        b"VP90" => Codec::VP9,
+        b"AV1" => Codec::AV1,
+        _ => return Err(nom::Err::Error(error_position!(&input[0..4], ErrorKind::Tag)))
+    };
+
+    Ok((&input[4..], codec))
+}
+
 // TODO: validate values
 named!(ivf_header<&[u8], IvfHeader>,
        do_parse!(
            tag!("DKIF")
            >> version: parse_u16
            >> _length: parse_u16
-           >> alt!( tag!("VP80") | tag!("VP90") | tag!("AV10"))
+           >> codec: parse_codec
            >> width: parse_u16
            >> height: parse_u16
            >> rate: parse_u32
            >> scale: parse_u32
            >> take!(8)
-           >> (IvfHeader {version, width, height, rate, scale})
+           >> (IvfHeader {version, width, height, rate, scale, codec})
        )
 );
 
