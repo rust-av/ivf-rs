@@ -84,6 +84,8 @@ mod tests {
 
     #[test]
     fn mux() {
+        let _ = pretty_env_logger::try_init();
+
         let output: File = tempfile::tempfile().unwrap();
 
         let info = GlobalInfo {

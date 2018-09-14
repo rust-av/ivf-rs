@@ -42,12 +42,12 @@ impl Demuxer for IvfDemuxer {
     fn read_headers(&mut self, buf: &Box<Buffered>, _info: &mut GlobalInfo) -> Result<SeekFrom> {
         match ivf_header(buf.data()) {
             Ok((input, header)) => {
-                println!("found header: {:?}", header);
+                debug!("found header: {:?}", header);
                 self.header = Some(header);
                 Ok(SeekFrom::Current(buf.data().offset(input) as i64))
             }
             Err(e) => {
-                println!("error reading headers: {:?}", e);
+                error!("error reading headers: {:?}", e);
                 Err(Error::InvalidData)
             }
         }
@@ -65,6 +65,8 @@ impl Demuxer for IvfDemuxer {
             // feed with more stuff
             match ivf_frame(buf.data()) {
                 Ok((input, frame)) => {
+                    debug!("found frame with size: {}\tpos: {}", frame.size, frame.pos);
+
                     let pkt = Packet {
                         data: frame.data,
                         pos: Some(frame.pos as usize),
@@ -80,7 +82,7 @@ impl Demuxer for IvfDemuxer {
                     ));
                 }
                 Err(e) => {
-                    println!("error reading frame: {:#?}", e);
+                    error!("error reading frame: {:#?}", e);
                     return Err(Error::InvalidData);
                 }
             }
@@ -170,6 +172,7 @@ mod tests {
 
     #[test]
     fn demux() {
+        let _ = pretty_env_logger::try_init();
         let d = IVF_DESC.create();
         let c = Cursor::new(IVF);
         let acc = AccReader::with_capacity(20000, c);
@@ -177,7 +180,7 @@ mod tests {
         let mut demuxer = Context::new(d, input);
         demuxer.read_headers().unwrap();
 
-        println!("global info: {:#?}", demuxer.info);
+        trace!("global info: {:#?}", demuxer.info);
 
         loop {
             match demuxer.read_event() {
@@ -185,15 +188,15 @@ mod tests {
                     Event::MoreDataNeeded(sz) => panic!("we needed more data: {} bytes", sz),
                     Event::NewStream(s) => panic!("new stream :{:?}", s),
                     Event::NewPacket(packet) => {
-                        println!("received packet with pos: {:?}", packet.pos);
+                        trace!("received packet with pos: {:?}", packet.pos);
                     }
                     Event::Eof => {
-                        println!("EOF!");
+                        trace!("EOF!");
                         break;
                     }
                 },
                 Err(e) => {
-                    println!("error: {:?}", e);
+                    trace!("error: {:?}", e);
                     break;
                 }
             }
