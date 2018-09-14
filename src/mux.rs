@@ -1,19 +1,14 @@
-// use av_format::stream::Stream;
-// use av_format::buffer::Buffered;
 use av_data::packet::Packet;
 use av_data::value::Value;
 use av_format::common::GlobalInfo;
 use av_format::error::*;
 use av_format::muxer::Muxer;
 use std::sync::Arc;
-// use av_format::demuxer::{Descr, Descriptor};
-// use av_format::common::GlobalInfo;
 
-use std::io::Write;
 use av_bitstream::bytewrite::*;
-// use bitstream_io::{LE, BitWriter};
+use std::io::Write;
 
-pub struct IvfMux {
+pub struct IvfMuxer {
     version: u16,
     width: u16,
     height: u16,
@@ -21,9 +16,9 @@ pub struct IvfMux {
     scale: u32,
 }
 
-impl IvfMux {
-    pub fn new() -> IvfMux {
-        IvfMux {
+impl IvfMuxer {
+    pub fn new() -> IvfMuxer {
+        IvfMuxer {
             version: 0,
             width: 0,
             height: 0,
@@ -33,7 +28,7 @@ impl IvfMux {
     }
 }
 
-impl Muxer for IvfMux {
+impl Muxer for IvfMuxer {
     fn configure(&mut self) -> Result<()> {
         Ok(())
     }
@@ -77,11 +72,12 @@ impl Muxer for IvfMux {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use av_format::common::GlobalInfo;
     use av_format::muxer::Context;
     use std::fs::File;
 
     #[test]
-    fn simple() {
+    fn mux() {
         let output: File = tempfile::tempfile().unwrap();
 
         let info = GlobalInfo {
@@ -90,7 +86,7 @@ mod tests {
             streams: Vec::new(),
         };
 
-        let mux = Box::new(IvfMux::new());
+        let mux = Box::new(IvfMuxer::new());
 
         let mut muxer = Context::new(mux, Box::new(output));
 
