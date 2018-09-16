@@ -39,10 +39,7 @@ impl Muxer for IvfMuxer {
     fn write_header(&mut self, buf: &mut Vec<u8>) -> Result<()> {
         trace!("Write muxer header: {:?}", self);
 
-        buf.reserve(32);
-        unsafe {
-            buf.set_len(32);
-        }
+        buf.resize(32, 0);
 
         let codec = match self.codec {
             Codec::VP8 => b"VP80",
