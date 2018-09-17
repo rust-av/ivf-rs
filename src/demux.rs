@@ -16,7 +16,7 @@ use av_format::error::*;
 use nom::{IResult, Offset, ErrorKind};
 use std::collections::VecDeque;
 use std::io::SeekFrom;
-use common::Codec;
+use crate::common::Codec;
 
 #[derive(Default)]
 pub struct IvfDemuxer {
@@ -67,7 +67,7 @@ impl Demuxer for IvfDemuxer {
             Ok((SeekFrom::Current(0), event))
         } else {
             // check for EOF
-            if buf.data().len() == 0 {
+            if buf.data().is_empty() {
                 return Ok((SeekFrom::Current(0), Event::MoreDataNeeded(0)));
             }
 
@@ -152,7 +152,7 @@ named!(ivf_frame<&[u8], IvfFrame>,
        do_parse!(
            size: parse_u32
            >> pos: parse_u64
-           >> data: apply!(parse_binary_data, size as u64)
+           >> data: apply!(parse_binary_data, u64::from(size))
            >> (IvfFrame { size, pos, data })
            )
       );
@@ -165,7 +165,7 @@ impl Descriptor for Des {
     fn create(&self) -> Box<Demuxer> {
         Box::new(IvfDemuxer::new())
     }
-    fn describe<'a>(&'a self) -> &'a Descr {
+    fn describe(&self) -> &Descr {
         &self.d
     }
     fn probe(&self, data: &[u8]) -> u8 {

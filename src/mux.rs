@@ -10,7 +10,7 @@ use av_format::common::GlobalInfo;
 use av_format::error::*;
 use av_format::muxer::Muxer;
 use std::sync::Arc;
-use common::Codec;
+use crate::common::Codec;
 
 use av_bitstream::bytewrite::*;
 use std::io::Write;
