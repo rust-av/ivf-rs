@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["gibix <gibix@riseup.net>"]
 
 [dependencies]
-nom = "^4.0"
+nom = "^5.0"
 av-bitstream = { version = "0.1.0", git = "https://github.com/rust-av/rust-av" }
 av-format = { version = "0.1.0", git = "https://github.com/rust-av/rust-av" }
 av-data = { version = "0.1.0", git = "https://github.com/rust-av/rust-av" }
