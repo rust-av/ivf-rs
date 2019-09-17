@@ -4,13 +4,13 @@
 //!
 //!
 
+use crate::common::Codec;
 use av_data::packet::Packet;
 use av_data::value::Value;
 use av_format::common::GlobalInfo;
 use av_format::error::*;
 use av_format::muxer::Muxer;
 use std::sync::Arc;
-use crate::common::Codec;
 
 use av_bitstream::bytewrite::*;
 use std::io::Write;
@@ -22,7 +22,7 @@ pub struct IvfMuxer {
     height: u16,
     rate: u32,
     scale: u32,
-    codec: Codec
+    codec: Codec,
 }
 
 impl IvfMuxer {
