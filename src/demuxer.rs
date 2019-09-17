@@ -14,8 +14,8 @@ use av_format::common::GlobalInfo;
 use av_format::demuxer::{Demuxer, Event};
 use av_format::demuxer::{Descr, Descriptor};
 use av_format::error::*;
-use nom::{IResult, Offset};
 use nom::error::ErrorKind;
+use nom::{IResult, Offset};
 use std::collections::VecDeque;
 use std::io::SeekFrom;
 

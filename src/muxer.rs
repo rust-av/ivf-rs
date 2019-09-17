@@ -6,6 +6,7 @@
 
 use crate::common::Codec;
 use av_data::packet::Packet;
+use av_data::params::MediaKind;
 use av_data::value::Value;
 use av_format::common::GlobalInfo;
 use av_format::error::*;
@@ -23,16 +24,32 @@ pub struct IvfMuxer {
     rate: u32,
     scale: u32,
     codec: Codec,
+    info: Option<GlobalInfo>,
 }
 
 impl IvfMuxer {
     pub fn new() -> IvfMuxer {
-        Default::default()
+        IvfMuxer::default()
     }
 }
 
 impl Muxer for IvfMuxer {
     fn configure(&mut self) -> Result<()> {
+        let params = &self.info.as_ref().unwrap().streams[0].params;
+        self.version = 1;
+        if let Some(MediaKind::Video(video)) = &params.kind {
+            self.width = video.width as u16;
+            self.width = video.height as u16;
+        };
+        self.rate = params.bit_rate as u32;
+        self.scale = 0;
+        self.codec = match params.codec_id.as_ref().map(|s| s.as_str()) {
+            Some("av1") => Codec::AV1,
+            Some("vp8") => Codec::VP8,
+            Some("vp9") => Codec::VP9,
+            _ => Codec::default(),
+        };
+
         Ok(())
     }
 
@@ -74,7 +91,8 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn set_global_info(&mut self, _info: GlobalInfo) -> Result<()> {
+    fn set_global_info(&mut self, info: GlobalInfo) -> Result<()> {
+        self.info = Some(info);
         Ok(())
     }
 
