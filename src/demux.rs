@@ -13,7 +13,8 @@ use av_format::common::GlobalInfo;
 use av_format::demuxer::{Demuxer, Event};
 use av_format::demuxer::{Descr, Descriptor};
 use av_format::error::*;
-use nom::{IResult, Offset, ErrorKind};
+use nom::{IResult, Offset};
+use nom::error::ErrorKind;
 use std::collections::VecDeque;
 use std::io::SeekFrom;
 use crate::common::Codec;
@@ -101,7 +102,7 @@ impl Demuxer for IvfDemuxer {
 
 /// take data ownership
 pub fn parse_binary_data(input: &[u8], size: u64) -> IResult<&[u8], Vec<u8>> {
-    do_parse!(input, s: take_s!(size as usize) >> (s.to_owned()))
+    do_parse!(input, s: take!(size as usize) >> (s.to_owned()))
 }
 
 /// u16 nom help function that maps to av-bitstream
@@ -152,8 +153,8 @@ named!(ivf_frame<&[u8], IvfFrame>,
        do_parse!(
            size: parse_u32
            >> pos: parse_u64
-           >> data: apply!(parse_binary_data, u64::from(size))
-           >> (IvfFrame { size, pos, data })
+           >> data: take!(size)
+           >> (IvfFrame { size, pos, data: data.to_owned() })
            )
       );
 
