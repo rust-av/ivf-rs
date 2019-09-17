@@ -1,5 +1,3 @@
-#![feature(rust_2018_preview)]
-
 //! This is a simple implementation of muxer/demuxer for Ivf file format.
 //!
 //! ## Example
@@ -24,10 +22,10 @@ extern crate nom;
 extern crate log;
 
 #[cfg(test)]
-extern crate tempfile;
-#[cfg(test)]
 extern crate pretty_env_logger;
+#[cfg(test)]
+extern crate tempfile;
 
+mod common;
 pub mod demux;
 pub mod mux;
-mod common;

@@ -5,6 +5,7 @@
 //! Internally the parsing is implement with the `nom` parser
 //!
 
+use crate::common::Codec;
 use av_bitstream::byteread::*;
 use av_data::packet::Packet;
 use av_data::timeinfo::TimeInfo;
@@ -17,7 +18,6 @@ use nom::{IResult, Offset};
 use nom::error::ErrorKind;
 use std::collections::VecDeque;
 use std::io::SeekFrom;
-use crate::common::Codec;
 
 #[derive(Default)]
 pub struct IvfDemuxer {
@@ -32,7 +32,7 @@ pub struct IvfHeader {
     height: u16,
     rate: u32,
     scale: u32,
-    codec: Codec
+    codec: Codec,
 }
 
 #[derive(Debug)]
@@ -49,7 +49,11 @@ impl IvfDemuxer {
 }
 
 impl Demuxer for IvfDemuxer {
-    fn read_headers(&mut self, buf: &Box<Buffered>, _info: &mut GlobalInfo) -> Result<SeekFrom> {
+    fn read_headers(
+        &mut self,
+        buf: &Box<dyn Buffered>,
+        _info: &mut GlobalInfo,
+    ) -> Result<SeekFrom> {
         match ivf_header(buf.data()) {
             Ok((input, header)) => {
                 debug!("found header: {:?}", header);
@@ -63,7 +67,7 @@ impl Demuxer for IvfDemuxer {
         }
     }
 
-    fn read_event(&mut self, buf: &Box<Buffered>) -> Result<(SeekFrom, Event)> {
+    fn read_event(&mut self, buf: &Box<dyn Buffered>) -> Result<(SeekFrom, Event)> {
         if let Some(event) = self.queue.pop_front() {
             Ok((SeekFrom::Current(0), event))
         } else {
@@ -86,14 +90,14 @@ impl Demuxer for IvfDemuxer {
                         is_corrupted: false,
                     };
 
-                    return Ok((
+                    Ok((
                         SeekFrom::Current(buf.data().offset(input) as i64),
                         Event::NewPacket(pkt),
-                    ));
+                    ))
                 }
                 Err(e) => {
                     error!("error reading frame: {:#?}", e);
-                    return Err(Error::InvalidData);
+                    Err(Error::InvalidData)
                 }
             }
         }
@@ -126,7 +130,12 @@ pub fn parse_codec(input: &[u8]) -> IResult<&[u8], Codec> {
         b"VP80" => Codec::VP8,
         b"VP90" => Codec::VP9,
         b"AV10" => Codec::AV1,
-        _ => return Err(nom::Err::Error(error_position!(&input[0..4], ErrorKind::Tag)))
+        _ => {
+            return Err(nom::Err::Error(error_position!(
+                &input[0..4],
+                ErrorKind::Tag
+            )))
+        }
     };
 
     Ok((&input[4..], codec))
@@ -163,7 +172,7 @@ struct Des {
 }
 
 impl Descriptor for Des {
-    fn create(&self) -> Box<Demuxer> {
+    fn create(&self) -> Box<dyn Demuxer> {
         Box::new(IvfDemuxer::new())
     }
     fn describe(&self) -> &Descr {
@@ -178,7 +187,7 @@ impl Descriptor for Des {
 }
 
 /// used by av context
-pub const IVF_DESC: &Descriptor = &Des {
+pub const IVF_DESC: &dyn Descriptor = &Des {
     d: Descr {
         name: "ivf-rs",
         demuxer: "ivf",
