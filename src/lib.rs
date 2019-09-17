@@ -27,5 +27,5 @@ extern crate pretty_env_logger;
 extern crate tempfile;
 
 mod common;
-pub mod demux;
-pub mod mux;
+pub mod demuxer;
+pub mod muxer;
