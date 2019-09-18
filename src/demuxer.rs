@@ -211,7 +211,7 @@ mod tests {
     use av_format::demuxer::Context;
     use std::io::Cursor;
 
-    const IVF: &'static [u8] = include_bytes!("../assets/vp80-00-comprehensive-001.ivf");
+    const IVF: &'static [u8] = include_bytes!("../../out.ivf");
 
     #[test]
     fn demux() {
@@ -233,6 +233,7 @@ mod tests {
                     Event::NewPacket(packet) => {
                         trace!("received packet with pos: {:?}", packet.pos);
                     }
+                    Event::Continue => continue,
                     Event::Eof => {
                         trace!("EOF!");
                         break;

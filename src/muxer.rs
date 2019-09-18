@@ -130,8 +130,8 @@ mod tests {
 
         let mut muxer = Context::new(mux, Box::new(output));
 
-        muxer.configure().unwrap();
         muxer.set_global_info(info).unwrap();
+        muxer.configure().unwrap();
         muxer.write_header().unwrap();
     }
 }
