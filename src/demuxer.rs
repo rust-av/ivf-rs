@@ -8,12 +8,15 @@
 use crate::common::Codec;
 use av_bitstream::byteread::*;
 use av_data::packet::Packet;
+use av_data::params::{CodecParams, MediaKind, VideoInfo};
+use av_data::rational::Rational64;
 use av_data::timeinfo::TimeInfo;
 use av_format::buffer::Buffered;
 use av_format::common::GlobalInfo;
 use av_format::demuxer::{Demuxer, Event};
 use av_format::demuxer::{Descr, Descriptor};
 use av_format::error::*;
+use av_format::stream::Stream;
 use nom::error::ErrorKind;
 use nom::{Err, IResult, Needed, Offset};
 use std::collections::VecDeque;
@@ -49,15 +52,32 @@ impl IvfDemuxer {
 }
 
 impl Demuxer for IvfDemuxer {
-    fn read_headers(
-        &mut self,
-        buf: &Box<dyn Buffered>,
-        _info: &mut GlobalInfo,
-    ) -> Result<SeekFrom> {
+    fn read_headers(&mut self, buf: &Box<dyn Buffered>, info: &mut GlobalInfo) -> Result<SeekFrom> {
         match ivf_header(buf.data()) {
             Ok((input, header)) => {
                 debug!("found header: {:?}", header);
+                let st = Stream {
+                    id: 0,
+                    index: 0,
+                    params: CodecParams {
+                        extradata: None,
+                        bit_rate: 0,
+                        delay: 0,
+                        convergence_window: 0,
+                        codec_id: Some(header.codec.into()),
+                        kind: Some(MediaKind::Video(VideoInfo {
+                            width: header.width as usize,
+                            height: header.height as usize,
+                            format: None,
+                        })),
+                    },
+                    start: None,
+                    duration: None,
+                    timebase: Rational64::new(1, 1000 * 1000 * 1000),
+                    user_private: None,
+                };
                 self.header = Some(header);
+                info.add_stream(st);
                 Ok(SeekFrom::Current(buf.data().offset(input) as i64))
             }
             Err(e) => {

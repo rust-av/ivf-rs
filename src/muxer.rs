@@ -36,16 +36,17 @@ impl IvfMuxer {
 /// This should be called if IvfMuxer::info is set
 impl Muxer for IvfMuxer {
     fn configure(&mut self) -> Result<()> {
-        match &self.info.as_ref() {
-            Some(info) => {
+        match self.info.as_ref() {
+            Some(info) if !info.streams.is_empty() => {
                 let params = &info.streams[0].params;
-                self.version = 1;
+                self.version = 0;
                 if let Some(MediaKind::Video(video)) = &params.kind {
                     self.width = video.width as u16;
-                    self.width = video.height as u16;
+                    self.height = video.height as u16;
                 };
-                self.rate = params.bit_rate as u32;
-                self.scale = 0;
+                // TODO: parse rate, scale
+                self.rate = 30;
+                self.scale = 1;
                 self.codec = match params.codec_id.as_ref().map(|s| s.as_str()) {
                     Some("av1") => Codec::AV1,
                     Some("vp8") => Codec::VP8,
@@ -53,9 +54,15 @@ impl Muxer for IvfMuxer {
                     _ => Codec::default(),
                 };
 
+                debug!("Configuration changes {:?}", self);
+
                 Ok(())
             }
-            None => Err(Error::InvalidData),
+
+            _ => {
+                debug!("No configuration changes {:?}", self);
+                Ok(())
+            }
         }
     }
 
