@@ -33,24 +33,30 @@ impl IvfMuxer {
     }
 }
 
+/// This should be called if IvfMuxer::info is set
 impl Muxer for IvfMuxer {
     fn configure(&mut self) -> Result<()> {
-        let params = &self.info.as_ref().unwrap().streams[0].params;
-        self.version = 1;
-        if let Some(MediaKind::Video(video)) = &params.kind {
-            self.width = video.width as u16;
-            self.width = video.height as u16;
-        };
-        self.rate = params.bit_rate as u32;
-        self.scale = 0;
-        self.codec = match params.codec_id.as_ref().map(|s| s.as_str()) {
-            Some("av1") => Codec::AV1,
-            Some("vp8") => Codec::VP8,
-            Some("vp9") => Codec::VP9,
-            _ => Codec::default(),
-        };
+        match &self.info.as_ref() {
+            Some(info) => {
+                let params = &info.streams[0].params;
+                self.version = 1;
+                if let Some(MediaKind::Video(video)) = &params.kind {
+                    self.width = video.width as u16;
+                    self.width = video.height as u16;
+                };
+                self.rate = params.bit_rate as u32;
+                self.scale = 0;
+                self.codec = match params.codec_id.as_ref().map(|s| s.as_str()) {
+                    Some("av1") => Codec::AV1,
+                    Some("vp8") => Codec::VP8,
+                    Some("vp9") => Codec::VP9,
+                    _ => Codec::default(),
+                };
 
-        Ok(())
+                Ok(())
+            }
+            None => Err(Error::InvalidData),
+        }
     }
 
     fn write_header(&mut self, buf: &mut Vec<u8>) -> Result<()> {
