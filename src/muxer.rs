@@ -6,6 +6,7 @@
 
 use crate::common::Codec;
 use av_data::packet::Packet;
+use av_data::params::MediaKind;
 use av_data::value::Value;
 use av_format::common::GlobalInfo;
 use av_format::error::*;
@@ -23,17 +24,46 @@ pub struct IvfMuxer {
     rate: u32,
     scale: u32,
     codec: Codec,
+    info: Option<GlobalInfo>,
 }
 
 impl IvfMuxer {
     pub fn new() -> IvfMuxer {
-        Default::default()
+        IvfMuxer::default()
     }
 }
 
+/// This should be called if IvfMuxer::info is set
 impl Muxer for IvfMuxer {
     fn configure(&mut self) -> Result<()> {
-        Ok(())
+        match self.info.as_ref() {
+            Some(info) if !info.streams.is_empty() => {
+                let params = &info.streams[0].params;
+                self.version = 0;
+                if let Some(MediaKind::Video(video)) = &params.kind {
+                    self.width = video.width as u16;
+                    self.height = video.height as u16;
+                };
+                // TODO: parse rate, scale
+                self.rate = 30;
+                self.scale = 1;
+                self.codec = match params.codec_id.as_ref().map(|s| s.as_str()) {
+                    Some("av1") => Codec::AV1,
+                    Some("vp8") => Codec::VP8,
+                    Some("vp9") => Codec::VP9,
+                    _ => Codec::default(),
+                };
+
+                debug!("Configuration changes {:?}", self);
+
+                Ok(())
+            }
+
+            _ => {
+                debug!("No configuration changes {:?}", self);
+                Ok(())
+            }
+        }
     }
 
     fn write_header(&mut self, buf: &mut Vec<u8>) -> Result<()> {
@@ -43,8 +73,8 @@ impl Muxer for IvfMuxer {
 
         let codec = match self.codec {
             Codec::VP8 => b"VP80",
-            Codec::VP9 => b"VP80",
-            Codec::AV1 => b"VP80",
+            Codec::VP9 => b"VP90",
+            Codec::AV1 => b"AV01",
         };
 
         (&mut buf[0..=3]).write_all(b"DKIF")?;
@@ -55,7 +85,8 @@ impl Muxer for IvfMuxer {
         put_u16l(&mut buf[14..=15], self.height);
         put_u32l(&mut buf[16..=19], self.rate);
         put_u32l(&mut buf[20..=23], self.scale);
-        put_u64l(&mut buf[24..=31], 0);
+        put_u32l(&mut buf[24..=27], 0);
+        put_u32l(&mut buf[28..=31], 0);
 
         Ok(())
     }
@@ -74,7 +105,8 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn set_global_info(&mut self, _info: GlobalInfo) -> Result<()> {
+    fn set_global_info(&mut self, info: GlobalInfo) -> Result<()> {
+        self.info = Some(info);
         Ok(())
     }
 
@@ -106,8 +138,8 @@ mod tests {
 
         let mut muxer = Context::new(mux, Box::new(output));
 
-        muxer.configure().unwrap();
         muxer.set_global_info(info).unwrap();
+        muxer.configure().unwrap();
         muxer.write_header().unwrap();
     }
 }

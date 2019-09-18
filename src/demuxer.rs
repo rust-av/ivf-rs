@@ -8,14 +8,17 @@
 use crate::common::Codec;
 use av_bitstream::byteread::*;
 use av_data::packet::Packet;
+use av_data::params::{CodecParams, MediaKind, VideoInfo};
+use av_data::rational::Rational64;
 use av_data::timeinfo::TimeInfo;
 use av_format::buffer::Buffered;
 use av_format::common::GlobalInfo;
 use av_format::demuxer::{Demuxer, Event};
 use av_format::demuxer::{Descr, Descriptor};
 use av_format::error::*;
-use nom::{IResult, Offset};
+use av_format::stream::Stream;
 use nom::error::ErrorKind;
+use nom::{Err, IResult, Needed, Offset};
 use std::collections::VecDeque;
 use std::io::SeekFrom;
 
@@ -25,7 +28,7 @@ pub struct IvfDemuxer {
     queue: VecDeque<Event>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct IvfHeader {
     version: u16,
     width: u16,
@@ -49,15 +52,32 @@ impl IvfDemuxer {
 }
 
 impl Demuxer for IvfDemuxer {
-    fn read_headers(
-        &mut self,
-        buf: &Box<dyn Buffered>,
-        _info: &mut GlobalInfo,
-    ) -> Result<SeekFrom> {
+    fn read_headers(&mut self, buf: &Box<dyn Buffered>, info: &mut GlobalInfo) -> Result<SeekFrom> {
         match ivf_header(buf.data()) {
             Ok((input, header)) => {
                 debug!("found header: {:?}", header);
+                let st = Stream {
+                    id: 0,
+                    index: 0,
+                    params: CodecParams {
+                        extradata: None,
+                        bit_rate: 0,
+                        delay: 0,
+                        convergence_window: 0,
+                        codec_id: Some(header.codec.into()),
+                        kind: Some(MediaKind::Video(VideoInfo {
+                            width: header.width as usize,
+                            height: header.height as usize,
+                            format: None,
+                        })),
+                    },
+                    start: None,
+                    duration: None,
+                    timebase: Rational64::new(1, 1000 * 1000 * 1000),
+                    user_private: None,
+                };
                 self.header = Some(header);
+                info.add_stream(st);
                 Ok(SeekFrom::Current(buf.data().offset(input) as i64))
             }
             Err(e) => {
@@ -95,6 +115,13 @@ impl Demuxer for IvfDemuxer {
                         Event::NewPacket(pkt),
                     ))
                 }
+                Err(Err::Incomplete(needed)) => {
+                    let sz = match needed {
+                        Needed::Size(size) => buf.data().len() + size,
+                        _ => 1024,
+                    };
+                    Err(Error::MoreDataNeeded(sz))
+                }
                 Err(e) => {
                     error!("error reading frame: {:#?}", e);
                     Err(Error::InvalidData)
@@ -129,7 +156,7 @@ pub fn parse_codec(input: &[u8]) -> IResult<&[u8], Codec> {
     let codec = match &input[0..4] {
         b"VP80" => Codec::VP8,
         b"VP90" => Codec::VP9,
-        b"AV10" => Codec::AV1,
+        b"AV01" => Codec::AV1,
         _ => {
             return Err(nom::Err::Error(error_position!(
                 &input[0..4],
@@ -204,7 +231,7 @@ mod tests {
     use av_format::demuxer::Context;
     use std::io::Cursor;
 
-    const IVF: &'static [u8] = include_bytes!("../assets/vp80-00-comprehensive-001.ivf");
+    const IVF: &'static [u8] = include_bytes!("../../out.ivf");
 
     #[test]
     fn demux() {
@@ -226,6 +253,7 @@ mod tests {
                     Event::NewPacket(packet) => {
                         trace!("received packet with pos: {:?}", packet.pos);
                     }
+                    Event::Continue => continue,
                     Event::Eof => {
                         trace!("EOF!");
                         break;
