@@ -78,7 +78,8 @@ impl Muxer for IvfMuxer {
         put_u16l(&mut buf[14..=15], self.height);
         put_u32l(&mut buf[16..=19], self.rate);
         put_u32l(&mut buf[20..=23], self.scale);
-        put_u64l(&mut buf[24..=31], 0);
+        put_u32l(&mut buf[24..=27], 0);
+        put_u32l(&mut buf[28..=31], 0);
 
         Ok(())
     }
