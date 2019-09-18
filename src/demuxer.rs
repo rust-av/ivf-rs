@@ -136,7 +136,7 @@ pub fn parse_codec(input: &[u8]) -> IResult<&[u8], Codec> {
     let codec = match &input[0..4] {
         b"VP80" => Codec::VP8,
         b"VP90" => Codec::VP9,
-        b"AV10" => Codec::AV1,
+        b"AV01" => Codec::AV1,
         _ => {
             return Err(nom::Err::Error(error_position!(
                 &input[0..4],

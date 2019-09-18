@@ -66,8 +66,8 @@ impl Muxer for IvfMuxer {
 
         let codec = match self.codec {
             Codec::VP8 => b"VP80",
-            Codec::VP9 => b"VP80",
-            Codec::AV1 => b"VP80",
+            Codec::VP9 => b"VP90",
+            Codec::AV1 => b"AV01",
         };
 
         (&mut buf[0..=3]).write_all(b"DKIF")?;
