@@ -15,7 +15,7 @@ use av_format::demuxer::{Demuxer, Event};
 use av_format::demuxer::{Descr, Descriptor};
 use av_format::error::*;
 use nom::error::ErrorKind;
-use nom::{IResult, Offset};
+use nom::{Err, IResult, Needed, Offset};
 use std::collections::VecDeque;
 use std::io::SeekFrom;
 
@@ -94,6 +94,13 @@ impl Demuxer for IvfDemuxer {
                         SeekFrom::Current(buf.data().offset(input) as i64),
                         Event::NewPacket(pkt),
                     ))
+                }
+                Err(Err::Incomplete(needed)) => {
+                    let sz = match needed {
+                        Needed::Size(size) => buf.data().len() + size,
+                        _ => 1024,
+                    };
+                    Err(Error::MoreDataNeeded(sz))
                 }
                 Err(e) => {
                     error!("error reading frame: {:#?}", e);
