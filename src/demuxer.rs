@@ -25,7 +25,7 @@ pub struct IvfDemuxer {
     queue: VecDeque<Event>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct IvfHeader {
     version: u16,
     width: u16,
