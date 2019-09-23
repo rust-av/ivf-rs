@@ -88,12 +88,13 @@ impl Demuxer for IvfDemuxer {
     }
 
     fn read_event(&mut self, buf: &Box<dyn Buffered>) -> Result<(SeekFrom, Event)> {
+
         if let Some(event) = self.queue.pop_front() {
             Ok((SeekFrom::Current(0), event))
         } else {
             // check for EOF
             if buf.data().is_empty() {
-                return Ok((SeekFrom::Current(0), Event::MoreDataNeeded(0)));
+                return Ok((SeekFrom::Current(0), Event::Eof));
             }
 
             // feed with more stuff
@@ -118,7 +119,7 @@ impl Demuxer for IvfDemuxer {
                 Err(Err::Incomplete(needed)) => {
                     let sz = match needed {
                         Needed::Size(size) => buf.data().len() + size,
-                        _ => 1024,
+                        Needed::Unknown => 1024,
                     };
                     Err(Error::MoreDataNeeded(sz))
                 }
