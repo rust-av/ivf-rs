@@ -231,7 +231,7 @@ mod tests {
     use av_format::demuxer::Context;
     use std::io::Cursor;
 
-    const IVF: &'static [u8] = include_bytes!("../../out.ivf");
+    const IVF: &'static [u8] = include_bytes!("../assets/single_stream_av1.ivf");
 
     #[test]
     fn demux() {
