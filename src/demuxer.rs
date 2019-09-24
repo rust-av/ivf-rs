@@ -254,7 +254,6 @@ mod tests {
                     Event::NewPacket(packet) => {
                         trace!("received packet with pos: {:?}", packet.pos);
                     }
-                    Event::Continue => continue,
                     Event::Eof => {
                         trace!("EOF!");
                         break;
