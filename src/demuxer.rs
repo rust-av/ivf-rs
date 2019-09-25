@@ -36,6 +36,7 @@ pub struct IvfHeader {
     rate: u32,
     scale: u32,
     codec: Codec,
+    nframe: u32,
 }
 
 #[derive(Debug)]
@@ -61,7 +62,7 @@ impl Demuxer for IvfDemuxer {
                     index: 0,
                     params: CodecParams {
                         extradata: None,
-                        bit_rate: 0,
+                        bit_rate: header.rate as usize,
                         delay: 0,
                         convergence_window: 0,
                         codec_id: Some(header.codec.into()),
@@ -72,7 +73,7 @@ impl Demuxer for IvfDemuxer {
                         })),
                     },
                     start: None,
-                    duration: None,
+                    duration: Some(header.nframe as u64),
                     timebase: Rational64::new(1, 1000 * 1000 * 1000),
                     user_private: None,
                 };
@@ -88,7 +89,6 @@ impl Demuxer for IvfDemuxer {
     }
 
     fn read_event(&mut self, buf: &Box<dyn Buffered>) -> Result<(SeekFrom, Event)> {
-
         if let Some(event) = self.queue.pop_front() {
             Ok((SeekFrom::Current(0), event))
         } else {
@@ -180,8 +180,9 @@ named!(ivf_header<&[u8], IvfHeader>,
            >> height: parse_u16
            >> rate: parse_u32
            >> scale: parse_u32
-           >> take!(8)
-           >> (IvfHeader {version, width, height, rate, scale, codec})
+           >> nframe: parse_u32
+           >> take!(4)
+           >> (IvfHeader {version, width, height, rate, scale, codec, nframe})
        )
 );
 
@@ -233,13 +234,14 @@ mod tests {
     use std::io::Cursor;
 
     const IVF: &'static [u8] = include_bytes!("../assets/single_stream_av1.ivf");
+    // const IVF: &'static [u8] = include_bytes!("../remuxed.ivf");
 
     #[test]
     fn demux() {
         let _ = pretty_env_logger::try_init();
         let d = IVF_DESC.create();
         let c = Cursor::new(IVF);
-        let acc = AccReader::with_capacity(20000, c);
+        let acc = AccReader::new(c);
         let input = Box::new(acc);
         let mut demuxer = Context::new(d, input);
         demuxer.read_headers().unwrap();
@@ -252,15 +254,15 @@ mod tests {
                     Event::MoreDataNeeded(sz) => panic!("we needed more data: {} bytes", sz),
                     Event::NewStream(s) => panic!("new stream :{:?}", s),
                     Event::NewPacket(packet) => {
-                        trace!("received packet with pos: {:?}", packet.pos);
+                        debug!("received packet with pos: {:?}", packet.pos);
                     }
                     Event::Eof => {
-                        trace!("EOF!");
+                        debug!("EOF!");
                         break;
                     }
                 },
                 Err(e) => {
-                    trace!("error: {:?}", e);
+                    error!("error: {:?}", e);
                     break;
                 }
             }

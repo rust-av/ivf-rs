@@ -24,6 +24,7 @@ pub struct IvfMuxer {
     rate: u32,
     scale: u32,
     codec: Codec,
+    duration: u32,
     info: Option<GlobalInfo>,
 }
 
@@ -38,14 +39,15 @@ impl Muxer for IvfMuxer {
     fn configure(&mut self) -> Result<()> {
         match self.info.as_ref() {
             Some(info) if !info.streams.is_empty() => {
+                self.duration = info.streams[0].duration.unwrap_or_default() as u32;
                 let params = &info.streams[0].params;
                 self.version = 0;
                 if let Some(MediaKind::Video(video)) = &params.kind {
                     self.width = video.width as u16;
                     self.height = video.height as u16;
                 };
-                // TODO: parse rate, scale
-                self.rate = 30;
+                // TODO: parse scale
+                self.rate = params.bit_rate as u32;
                 self.scale = 1;
                 self.codec = match params.codec_id.as_ref().map(|s| s.as_str()) {
                     Some("av1") => Codec::AV1,
@@ -67,7 +69,7 @@ impl Muxer for IvfMuxer {
     }
 
     fn write_header(&mut self, buf: &mut Vec<u8>) -> Result<()> {
-        trace!("Write muxer header: {:?}", self);
+        debug!("Write muxer header: {:?}", self);
 
         buf.resize(32, 0);
 
@@ -85,7 +87,7 @@ impl Muxer for IvfMuxer {
         put_u16l(&mut buf[14..=15], self.height);
         put_u32l(&mut buf[16..=19], self.rate);
         put_u32l(&mut buf[20..=23], self.scale);
-        put_u32l(&mut buf[24..=27], 0);
+        put_u32l(&mut buf[24..=27], self.duration);
         put_u32l(&mut buf[28..=31], 0);
 
         Ok(())
@@ -93,11 +95,13 @@ impl Muxer for IvfMuxer {
 
     fn write_packet(&mut self, buf: &mut Vec<u8>, pkt: Arc<Packet>) -> Result<()> {
         let mut frame_header = [0; 12];
+
         put_u32l(&mut frame_header[0..=3], pkt.data.len() as u32);
-        if let Some(pos) = pkt.pos {
-            put_u64l(&mut frame_header[3..], pos as u64);
-        }
+        put_u64l(&mut frame_header[3..12], pkt.pos.unwrap_or_default() as u64);
+
+        buf.extend(&frame_header);
         buf.extend(&pkt.data);
+
         Ok(())
     }
 
