@@ -256,10 +256,12 @@ mod tests {
                     Event::NewPacket(packet) => {
                         debug!("received packet with pos: {:?}", packet.pos);
                     }
+                    Event::Continue => continue,
                     Event::Eof => {
                         debug!("EOF!");
                         break;
                     }
+                    _ => unimplemented!(),
                 },
                 Err(e) => {
                     error!("error: {:?}", e);

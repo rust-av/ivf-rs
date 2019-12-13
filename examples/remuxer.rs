@@ -11,8 +11,8 @@ use av_format::muxer::Context as MuxerContext;
 use ivf::demuxer::*;
 use ivf::muxer::*;
 use std::fs::File;
-use std::sync::Arc;
 use std::path::PathBuf;
+use std::sync::Arc;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -60,11 +60,13 @@ fn main() {
                     debug!("received packet with pos: {:?}", packet.pos);
                     muxer.write_packet(Arc::new(packet)).unwrap();
                 }
+                Event::Continue => continue,
                 Event::Eof => {
                     muxer.write_trailer().unwrap();
                     debug!("EOF!");
                     break;
                 }
+                _ => unimplemented!(),
             },
             Err(e) => {
                 debug!("error: {:?}", e);
