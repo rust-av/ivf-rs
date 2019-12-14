@@ -39,7 +39,7 @@ pub struct IvfHeader {
     nframe: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct IvfFrame {
     size: u32,
     pos: u64,
@@ -234,16 +234,36 @@ mod tests {
     use std::io::Cursor;
 
     const IVF: &'static [u8] = include_bytes!("../assets/single_stream_av1.ivf");
-    // const IVF: &'static [u8] = include_bytes!("../remuxed.ivf");
+
+    #[test]
+    fn parse_headers() {
+        let _ = pretty_env_logger::try_init();
+
+        let descriptor = IVF_DESC.create();
+        let cursor = Cursor::new(IVF);
+        let acc = AccReader::new(cursor);
+        let input = Box::new(acc);
+
+        let mut demuxer = Context::new(descriptor, input);
+
+        match demuxer.read_headers() {
+            Ok(_) => debug!("Headers read correctly"),
+            Err(e) => {
+                error!("error: {:?}", e);
+            }
+        }
+
+        trace!("global info: {:#?}", demuxer.info);
+    }
 
     #[test]
     fn demux() {
         let _ = pretty_env_logger::try_init();
-        let d = IVF_DESC.create();
-        let c = Cursor::new(IVF);
-        let acc = AccReader::new(c);
+        let descriptor = IVF_DESC.create();
+        let cursor = Cursor::new(IVF);
+        let acc = AccReader::new(cursor);
         let input = Box::new(acc);
-        let mut demuxer = Context::new(d, input);
+        let mut demuxer = Context::new(descriptor, input);
         demuxer.read_headers().unwrap();
 
         trace!("global info: {:#?}", demuxer.info);
