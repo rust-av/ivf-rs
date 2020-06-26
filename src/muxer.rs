@@ -49,7 +49,7 @@ impl Muxer for IvfMuxer {
                 // TODO: parse scale
                 self.rate = params.bit_rate as u32;
                 self.scale = 1;
-                self.codec = match params.codec_id.as_ref().map(|s| s.as_str()) {
+                self.codec = match params.codec_id.as_deref() {
                     Some("av1") => Codec::AV1,
                     Some("vp8") => Codec::VP8,
                     Some("vp9") => Codec::VP9,

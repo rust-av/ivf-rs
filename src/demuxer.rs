@@ -188,13 +188,13 @@ named!(ivf_header<&[u8], IvfHeader>,
 
 // (frame_size > 256 * 1024 * 1024)
 named!(ivf_frame<&[u8], IvfFrame>,
-       do_parse!(
-           size: parse_u32
-           >> pos: parse_u64
-           >> data: take!(size)
-           >> (IvfFrame { size, pos, data: data.to_owned() })
-           )
-      );
+ do_parse!(
+     size: parse_u32
+     >> pos: parse_u64
+     >> data: take!(size)
+     >> (IvfFrame { size, pos, data: data.to_owned() })
+     )
+);
 
 struct Des {
     d: Descr,
@@ -233,7 +233,7 @@ mod tests {
     use av_format::demuxer::Context;
     use std::io::Cursor;
 
-    const IVF: &'static [u8] = include_bytes!("../assets/single_stream_av1.ivf");
+    const IVF: &[u8] = include_bytes!("../assets/single_stream_av1.ivf");
 
     #[test]
     fn parse_headers() {

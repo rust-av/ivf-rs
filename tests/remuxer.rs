@@ -14,9 +14,9 @@ use std::io::Cursor;
 use std::path::Path;
 use std::sync::Arc;
 
-const IVF: &'static [u8] = include_bytes!("../assets/single_stream_av1.ivf");
-const IVF_STR_OUTPUT: &'static str = "assets/out_av1.ivf";
-const IVF_OUTPUT: &'static [u8] = include_bytes!("../assets/out_av1.ivf");
+const IVF: &[u8] = include_bytes!("../assets/single_stream_av1.ivf");
+const IVF_STR_OUTPUT: &str = "assets/out_av1.ivf";
+const IVF_OUTPUT: &[u8] = include_bytes!("../assets/out_av1.ivf");
 
 fn read_demux(path: &'static [u8]) -> DemuxerContext {
     let demux_cursor = Cursor::new(path);
