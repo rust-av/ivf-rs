@@ -2,6 +2,7 @@
 name = "ivf"
 version = "0.1.0"
 authors = ["gibix <gibix@riseup.net>"]
+include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
 nom = "5.0"
