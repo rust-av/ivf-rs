@@ -94,6 +94,8 @@ impl Muxer for IvfMuxer {
     }
 
     fn write_packet(&mut self, buf: &mut Vec<u8>, pkt: Arc<Packet>) -> Result<()> {
+        trace!("Write packet: {:?}", pkt.pos);
+
         let mut frame_header = [0; 12];
 
         put_u32l(&mut frame_header[0..4], pkt.data.len() as u32);

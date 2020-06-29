@@ -249,7 +249,7 @@ mod tests {
         match demuxer.read_headers() {
             Ok(_) => debug!("Headers read correctly"),
             Err(e) => {
-                error!("error: {:?}", e);
+                panic!("error: {:?}", e);
             }
         }
 
@@ -284,8 +284,7 @@ mod tests {
                     _ => unimplemented!(),
                 },
                 Err(e) => {
-                    error!("error: {:?}", e);
-                    break;
+                    panic!("error: {:?}", e);
                 }
             }
         }

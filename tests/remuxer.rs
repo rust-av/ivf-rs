@@ -10,21 +10,17 @@ use av_format::muxer::Context as MuxerContext;
 use ivf::demuxer::*;
 use ivf::muxer::*;
 use std::fs::File;
-use std::io::Cursor;
 use std::path::Path;
 use std::sync::Arc;
 
-const IVF: &[u8] = include_bytes!("../assets/single_stream_av1.ivf");
-const IVF_STR_OUTPUT: &str = "assets/out_av1.ivf";
-const IVF_OUTPUT: &[u8] = include_bytes!("../assets/out_av1.ivf");
+const IVF: &str = "assets/single_stream_av1.ivf";
+const IVF_OUTPUT: &str = "assets/out_av1.ivf";
 
-fn read_demux(path: &'static [u8]) -> DemuxerContext {
-    let demux_cursor = Cursor::new(path);
-    let demux_acc = AccReader::new(demux_cursor);
-    let input = Box::new(demux_acc);
-
-    let demux = Box::new(IvfDemuxer::new());
-    DemuxerContext::new(demux, input)
+fn read_demux<P: AsRef<Path>>(path: P) -> DemuxerContext {
+    let input_file = File::open(path).unwrap();
+    let input_reader = AccReader::new(input_file);
+    let demuxer = Box::new(IvfDemuxer::new());
+    DemuxerContext::new(demuxer, Box::new(input_reader))
 }
 
 fn demux_mux() {
@@ -32,11 +28,9 @@ fn demux_mux() {
 
     demuxer.read_headers().unwrap();
 
-    let output_file = File::create(Path::new(IVF_STR_OUTPUT)).unwrap();
-    let output = Box::new(output_file);
-
+    let output_file = File::create(IVF_OUTPUT).unwrap();
     let mux = Box::new(IvfMuxer::new());
-    let mut muxer = MuxerContext::new(mux, output);
+    let mut muxer = MuxerContext::new(mux, Box::new(output_file));
 
     muxer.set_global_info(demuxer.info.clone()).unwrap();
     muxer.configure().unwrap();
@@ -72,7 +66,6 @@ fn check_mux() {
     let mut demuxer = read_demux(IVF_OUTPUT);
 
     demuxer_original.read_headers().unwrap();
-
     demuxer.read_headers().unwrap();
 
     loop {
@@ -109,6 +102,8 @@ fn check_mux() {
 
 #[test]
 fn remuxer() {
+    let _ = pretty_env_logger::try_init();
+
     // Demux ivf file and remux it
     demux_mux();
 

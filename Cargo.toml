@@ -6,7 +6,7 @@ include = ["src/**/*", "LICENSE", "README.md"]
 
 [dependencies]
 nom = "5.0"
-av-bitstream = "0.1"
+av-bitstream = "0.1.2"
 av-format = "0.2"
 av-data = "0.2"
 log = "0.4"
