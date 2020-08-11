@@ -1,5 +1,5 @@
 [package]
-name = "ivf"
+name = "av-ivf"
 version = "0.1.0"
 authors = ["gibix <gibix@riseup.net>"]
 include = ["src/**/*", "LICENSE", "README.md"]
