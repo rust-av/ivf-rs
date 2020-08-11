@@ -1,14 +1,14 @@
 #[macro_use]
 extern crate log;
 extern crate av_format;
-extern crate ivf;
+extern crate av_ivf;
 
 use av_format::buffer::AccReader;
 use av_format::demuxer::Context as DemuxerContext;
 use av_format::demuxer::Event;
 use av_format::muxer::Context as MuxerContext;
-use ivf::demuxer::*;
-use ivf::muxer::*;
+use av_ivf::demuxer::*;
+use av_ivf::muxer::*;
 use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
