@@ -2,7 +2,11 @@
 name = "av-ivf"
 version = "0.1.0"
 authors = ["gibix <gibix@riseup.net>"]
+license = "MIT"
 include = ["src/**/*", "LICENSE", "README.md"]
+homepage = "https://github.com/rust-av/ivf-rs"
+repository = "https://github.com/rust-av/ivf-rs"
+description = "IVF muxer and demuxer"
 
 [dependencies]
 nom = "5.0"
