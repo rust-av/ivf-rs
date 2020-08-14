@@ -68,10 +68,8 @@ impl Muxer for IvfMuxer {
         }
     }
 
-    fn write_header(&mut self, buf: &mut Vec<u8>) -> Result<()> {
+    fn write_header(&mut self, buf: &mut dyn Write) -> Result<()> {
         debug!("Write muxer header: {:?}", self);
-
-        buf.resize(32, 0);
 
         let codec = match self.codec {
             Codec::VP8 => b"VP80",
@@ -79,21 +77,24 @@ impl Muxer for IvfMuxer {
             Codec::AV1 => b"AV01",
         };
 
-        (&mut buf[0..=3]).write_all(b"DKIF")?;
-        put_u16l(&mut buf[4..=5], self.version);
-        put_u16l(&mut buf[6..=7], 32);
-        (&mut buf[8..=11]).write_all(codec)?;
-        put_u16l(&mut buf[12..=13], self.width);
-        put_u16l(&mut buf[14..=15], self.height);
-        put_u32l(&mut buf[16..=19], self.rate);
-        put_u32l(&mut buf[20..=23], self.scale);
-        put_u32l(&mut buf[24..=27], self.duration);
-        put_u32l(&mut buf[28..=31], 0);
+        let mut tmp_buf = [0u8; 20];
+        buf.write_all(b"DKIF")?;
+        put_u16l(&mut tmp_buf[0..2], self.version);
+        put_u16l(&mut tmp_buf[2..4], 32);
+        buf.write_all(&tmp_buf[..4])?;
+        buf.write_all(codec)?;
+        put_u16l(&mut tmp_buf[0..2], self.width);
+        put_u16l(&mut tmp_buf[2..4], self.height);
+        put_u32l(&mut tmp_buf[4..8], self.rate);
+        put_u32l(&mut tmp_buf[8..12], self.scale);
+        put_u32l(&mut tmp_buf[12..16], self.duration);
+        put_u32l(&mut tmp_buf[16..20], 0);
+        buf.write_all(&tmp_buf)?;
 
         Ok(())
     }
 
-    fn write_packet(&mut self, buf: &mut Vec<u8>, pkt: Arc<Packet>) -> Result<()> {
+    fn write_packet(&mut self, buf: &mut dyn Write, pkt: Arc<Packet>) -> Result<()> {
         trace!("Write packet: {:?}", pkt.pos);
 
         let mut frame_header = [0; 12];
@@ -101,13 +102,13 @@ impl Muxer for IvfMuxer {
         put_u32l(&mut frame_header[0..4], pkt.data.len() as u32);
         put_u64l(&mut frame_header[4..12], pkt.pos.unwrap_or_default() as u64);
 
-        buf.extend(&frame_header);
-        buf.extend(&pkt.data);
+        buf.write_all(&frame_header)?;
+        buf.write_all(&pkt.data)?;
 
         Ok(())
     }
 
-    fn write_trailer(&mut self, _buf: &mut Vec<u8>) -> Result<()> {
+    fn write_trailer(&mut self, _buf: &mut dyn Write) -> Result<()> {
         Ok(())
     }
 
