@@ -5,23 +5,23 @@
 //!
 
 use crate::common::Codec;
+use av_bitstream::bytewrite::*;
 use av_data::packet::Packet;
 use av_data::params::MediaKind;
+use av_data::rational::Rational32;
 use av_data::value::Value;
 use av_format::common::GlobalInfo;
 use av_format::error::*;
 use av_format::muxer::Muxer;
-use std::sync::Arc;
-
-use av_bitstream::bytewrite::*;
 use std::io::Write;
+use std::sync::Arc;
 
 #[derive(Default, Debug)]
 pub struct IvfMuxer {
     version: u16,
     width: u16,
     height: u16,
-    rate: u32,
+    frame_rate: Rational32,
     scale: u32,
     codec: Codec,
     duration: u32,
@@ -85,7 +85,8 @@ impl Muxer for IvfMuxer {
         buf.write_all(codec)?;
         put_u16l(&mut tmp_buf[0..2], self.width);
         put_u16l(&mut tmp_buf[2..4], self.height);
-        put_u32l(&mut tmp_buf[4..8], self.rate);
+        put_u32l(&mut tmp_buf[4..6], *self.frame_rate.numer() as u32);
+        put_u32l(&mut tmp_buf[6..8], *self.frame_rate.denom() as u32);
         put_u32l(&mut tmp_buf[8..12], self.scale);
         put_u32l(&mut tmp_buf[12..16], self.duration);
         put_u32l(&mut tmp_buf[16..20], 0);
