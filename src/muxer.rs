@@ -16,7 +16,7 @@ use av_format::muxer::Muxer;
 use std::io::Write;
 use std::sync::Arc;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct IvfMuxer {
     version: u16,
     width: u16,
@@ -26,6 +26,15 @@ pub struct IvfMuxer {
     codec: Codec,
     duration: u32,
     info: Option<GlobalInfo>,
+}
+
+impl Default for IvfMuxer {
+    fn default() -> Self {
+        IvfMuxer {
+            frame_rate: Rational32::new(30, 1),
+            ..Default::default()
+        }
+    }
 }
 
 impl IvfMuxer {
@@ -46,8 +55,10 @@ impl Muxer for IvfMuxer {
                     self.width = video.width as u16;
                     self.height = video.height as u16;
                 };
-                // TODO: parse scale
-                self.rate = params.bit_rate as u32;
+                self.frame_rate = info
+                    .timebase
+                    .map(|tb| Rational32::new(*tb.denom() as i32, *tb.numer() as i32))
+                    .unwrap_or_else(|| Rational32::new(30, 1));
                 self.scale = 1;
                 self.codec = match params.codec_id.as_deref() {
                     Some("av1") => Codec::AV1,
