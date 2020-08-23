@@ -32,7 +32,13 @@ impl Default for IvfMuxer {
     fn default() -> Self {
         IvfMuxer {
             frame_rate: Rational32::new(30, 1),
-            ..Default::default()
+            version: Default::default(),
+            width: Default::default(),
+            height: Default::default(),
+            scale: Default::default(),
+            codec: Default::default(),
+            duration: Default::default(),
+            info: Default::default(),
         }
     }
 }
@@ -96,9 +102,8 @@ impl Muxer for IvfMuxer {
         buf.write_all(codec)?;
         put_u16l(&mut tmp_buf[0..2], self.width);
         put_u16l(&mut tmp_buf[2..4], self.height);
-        put_u32l(&mut tmp_buf[4..6], *self.frame_rate.numer() as u32);
-        put_u32l(&mut tmp_buf[6..8], *self.frame_rate.denom() as u32);
-        put_u32l(&mut tmp_buf[8..12], self.scale);
+        put_u32l(&mut tmp_buf[4..8], *self.frame_rate.numer() as u32);
+        put_u32l(&mut tmp_buf[8..12], *self.frame_rate.denom() as u32);
         put_u32l(&mut tmp_buf[12..16], self.duration);
         put_u32l(&mut tmp_buf[16..20], 0);
         buf.write_all(&tmp_buf)?;
