@@ -12,7 +12,7 @@ description = "IVF muxer and demuxer"
 nom = "5.0"
 av-bitstream = "0.1.2"
 av-format = "0.3"
-av-data = "0.2"
+av-data = "0.3"
 log = "0.4"
 
 [dev-dependencies]
