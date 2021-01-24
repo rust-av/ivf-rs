@@ -55,19 +55,13 @@ jobs:
         toolchain: stable
         override: true
 
-    - name: Set environment variables
-      if: matrix.platform == 'windows-latest'
-      run: |
-        $VsPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer"
-        echo "::add-path::$VsPath;C:\nasm"
-
     - name: Set MSVC x86_64 linker path
       if: matrix.platform == 'windows-latest'
       run: |
         $LinkGlob = "VC\Tools\MSVC\*\bin\Hostx64\x64"
-        $LinkPath = vswhere -latest -products * -find "$LinkGlob" |
-                    Select-Object -Last 1
-        echo "::add-path::$LinkPath"
+        $env:PATH = "$env:PATH;${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer"
+        $LinkPath = vswhere -latest -products * -find "$LinkGlob" | Select-Object -Last 1
+        echo "$LinkPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Build
       run: cargo build --all-features --tests --benches
