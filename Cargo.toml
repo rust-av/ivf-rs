@@ -9,7 +9,7 @@ repository = "https://github.com/rust-av/ivf-rs"
 description = "IVF muxer and demuxer"
 
 [dependencies]
-nom = "5.0"
+nom = "6.2"
 av-bitstream = "0.1.2"
 av-format = "0.3"
 av-data = "0.3"
