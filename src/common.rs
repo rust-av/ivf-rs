@@ -11,9 +11,9 @@ impl Default for Codec {
     }
 }
 
-impl Into<String> for Codec {
-    fn into(self) -> String {
-        match self {
+impl From<Codec> for String {
+    fn from(other: Codec) -> String {
+        match other {
             Codec::VP8 => String::from("vp8"),
             Codec::VP9 => String::from("vp9"),
             Codec::AV1 => String::from("av1"),
