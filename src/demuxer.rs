@@ -118,7 +118,7 @@ impl Demuxer for IvfDemuxer {
                 }
                 Err(Err::Incomplete(needed)) => {
                     let sz = match needed {
-                        Needed::Size(size) => buf.data().len() + size,
+                        Needed::Size(size) => buf.data().len() + size.get(),
                         Needed::Unknown => 1024,
                     };
                     Err(Error::MoreDataNeeded(sz))
