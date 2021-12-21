@@ -17,7 +17,10 @@ use av_format::demuxer::{Demuxer, Event};
 use av_format::demuxer::{Descr, Descriptor};
 use av_format::error::*;
 use av_format::stream::Stream;
+use nom::bytes::streaming::tag;
+use nom::bytes::streaming::take;
 use nom::error::ErrorKind;
+use nom::sequence::tuple;
 use nom::{Err, IResult, Needed, Offset};
 use std::collections::VecDeque;
 use std::io::SeekFrom;
@@ -134,7 +137,7 @@ impl Demuxer for IvfDemuxer {
 
 /// take data ownership
 pub fn parse_binary_data(input: &[u8], size: u64) -> IResult<&[u8], Vec<u8>> {
-    do_parse!(input, s: take!(size as usize) >> (s.to_owned()))
+    take(size as usize)(input).map(|(input, s)| (input, s.to_vec()))
 }
 
 /// u16 nom help function that maps to av-bitstream
@@ -170,31 +173,55 @@ pub fn parse_codec(input: &[u8]) -> IResult<&[u8], Codec> {
 }
 
 // TODO: validate values
-named!(ivf_header<&[u8], IvfHeader>,
-       do_parse!(
-           tag!("DKIF")
-           >> version: parse_u16
-           >> _length: parse_u16
-           >> codec: parse_codec
-           >> width: parse_u16
-           >> height: parse_u16
-           >> rate: parse_u32
-           >> scale: parse_u32
-           >> nframe: parse_u32
-           >> take!(4)
-           >> (IvfHeader {version, width, height, rate, scale, codec, nframe})
-       )
-);
+pub fn ivf_header(input: &[u8]) -> IResult<&[u8], IvfHeader> {
+    tuple((
+        tag("DKIF"),
+        parse_u16,
+        parse_u16,
+        parse_codec,
+        parse_u16,
+        parse_u16,
+        parse_u32,
+        parse_u32,
+        parse_u32,
+        take(4usize),
+    ))(input)
+    .map(
+        |(input, (_tag, version, _length, codec, width, height, rate, scale, nframe, _))| {
+            (
+                input,
+                IvfHeader {
+                    version,
+                    width,
+                    height,
+                    rate,
+                    scale,
+                    codec,
+                    nframe,
+                },
+            )
+        },
+    )
+}
 
 // (frame_size > 256 * 1024 * 1024)
-named!(ivf_frame<&[u8], IvfFrame>,
- do_parse!(
-     size: parse_u32
-     >> pos: parse_u64
-     >> data: take!(size)
-     >> (IvfFrame { size, pos, data: data.to_owned() })
-     )
-);
+pub fn ivf_frame(input: &[u8]) -> IResult<&[u8], IvfFrame> {
+    tuple((parse_u32, parse_u64))(input)
+        .and_then(|(input, (size, pos))| {
+            let (input, data) = take(size)(input)?;
+            Ok((input, (size, pos, data)))
+        })
+        .map(|(input, (size, pos, data))| {
+            (
+                input,
+                IvfFrame {
+                    size,
+                    pos,
+                    data: data.to_owned(),
+                },
+            )
+        })
+}
 
 struct Des {
     d: Descr,
