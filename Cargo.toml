@@ -1,6 +1,6 @@
 [package]
 name = "av-ivf"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["gibix <gibix@riseup.net>"]
 license = "MIT"
 include = ["src/**/*", "LICENSE", "README.md"]
