@@ -33,10 +33,12 @@ pub struct IvfDemuxer {
 
 #[derive(Clone, Debug)]
 pub struct IvfHeader {
+    #[allow(dead_code)]
     version: u16,
     width: u16,
     height: u16,
     rate: u32,
+    #[allow(dead_code)]
     scale: u32,
     codec: Codec,
     nframe: u32,
