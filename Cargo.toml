@@ -1,6 +1,6 @@
 [package]
 name = "av-ivf"
-version = "0.2.3"
+version = "0.3.0"
 authors = ["gibix <gibix@riseup.net>"]
 license = "MIT"
 include = ["src/**/*", "LICENSE", "README.md"]
@@ -11,7 +11,7 @@ description = "IVF muxer and demuxer"
 [dependencies]
 nom = "7.1"
 av-bitstream = "0.1.2"
-av-format = "0.3"
+av-format = "0.4"
 av-data = "0.3"
 log = "0.4"
 

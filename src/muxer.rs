@@ -12,7 +12,7 @@ use av_data::rational::Rational32;
 use av_data::value::Value;
 use av_format::common::GlobalInfo;
 use av_format::error::*;
-use av_format::muxer::Muxer;
+use av_format::muxer::{Muxer, Writer};
 use std::io::Write;
 use std::sync::Arc;
 
@@ -85,7 +85,7 @@ impl Muxer for IvfMuxer {
         }
     }
 
-    fn write_header(&mut self, buf: &mut dyn Write) -> Result<()> {
+    fn write_header(&mut self, buf: &mut Writer) -> Result<()> {
         debug!("Write muxer header: {:?}", self);
 
         let codec = match self.codec {
@@ -111,7 +111,7 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn write_packet(&mut self, buf: &mut dyn Write, pkt: Arc<Packet>) -> Result<()> {
+    fn write_packet(&mut self, buf: &mut Writer, pkt: Arc<Packet>) -> Result<()> {
         trace!("Write packet: {:?}", pkt.pos);
 
         let mut frame_header = [0; 12];
@@ -125,7 +125,7 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn write_trailer(&mut self, _buf: &mut dyn Write) -> Result<()> {
+    fn write_trailer(&mut self, _buf: &mut Writer) -> Result<()> {
         Ok(())
     }
 
