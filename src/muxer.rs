@@ -143,7 +143,7 @@ impl Muxer for IvfMuxer {
 mod tests {
     use super::*;
     use av_format::common::GlobalInfo;
-    use av_format::muxer::Context;
+    use av_format::muxer::{Context, Writer};
     use std::fs::File;
 
     #[test]
@@ -160,7 +160,7 @@ mod tests {
 
         let mux = Box::new(IvfMuxer::new());
 
-        let mut muxer = Context::new(mux, Box::new(output));
+        let mut muxer = Context::new(mux, Writer::Seekable(Box::new(output)));
 
         muxer.set_global_info(info).unwrap();
         muxer.configure().unwrap();

@@ -7,7 +7,7 @@ extern crate structopt;
 use av_format::buffer::AccReader;
 use av_format::demuxer::Context as DemuxerContext;
 use av_format::demuxer::Event;
-use av_format::muxer::Context as MuxerContext;
+use av_format::muxer::{Context as MuxerContext, Writer};
 use av_ivf::demuxer::*;
 use av_ivf::muxer::*;
 use std::fs::File;
@@ -45,7 +45,7 @@ fn main() {
 
     let mux = Box::new(IvfMuxer::new());
 
-    let mut muxer = MuxerContext::new(mux, Box::new(output));
+    let mut muxer = MuxerContext::new(mux, Writer::Seekable(Box::new(output)));
 
     muxer.set_global_info(demuxer.info.clone()).unwrap();
     muxer.configure().unwrap();
