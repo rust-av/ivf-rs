@@ -1,17 +1,16 @@
-#[macro_use]
-extern crate log;
-extern crate av_format;
-extern crate av_ivf;
+use std::fs::File;
+use std::io::{Cursor, Write};
+use std::sync::Arc;
+
+use log::{debug, error};
 
 use av_format::buffer::AccReader;
 use av_format::demuxer::Context as DemuxerContext;
 use av_format::demuxer::Event;
 use av_format::muxer::{Context as MuxerContext, Writer};
+
 use av_ivf::demuxer::*;
 use av_ivf::muxer::*;
-use std::fs::File;
-use std::io::{Cursor, Write};
-use std::sync::Arc;
 
 const IVF: &str = "assets/single_stream_av1.ivf";
 const IVF_OUTPUT: &str = "assets/out_av1.ivf";

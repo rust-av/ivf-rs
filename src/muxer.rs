@@ -4,7 +4,11 @@
 //!
 //!
 
-use crate::common::Codec;
+use std::io::Write;
+use std::sync::Arc;
+
+use log::{debug, trace};
+
 use av_bitstream::bytewrite::*;
 use av_data::packet::Packet;
 use av_data::params::MediaKind;
@@ -13,8 +17,8 @@ use av_data::value::Value;
 use av_format::common::GlobalInfo;
 use av_format::error::*;
 use av_format::muxer::{Muxer, WriteOwned, WriteSeek, Writer};
-use std::io::Write;
-use std::sync::Arc;
+
+use crate::common::Codec;
 
 #[derive(Debug)]
 pub struct IvfMuxer {
@@ -151,10 +155,12 @@ impl Muxer for IvfMuxer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::io::Cursor;
+
     use av_format::common::GlobalInfo;
     use av_format::muxer::{Context, Writer};
-    use std::io::Cursor;
+
+    use super::*;
 
     #[test]
     fn mux() {

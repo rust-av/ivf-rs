@@ -13,19 +13,6 @@
 //! This projects relies on [rust-av](https://github.com/rust-av/rust-av) toolkit
 //!
 
-extern crate av_bitstream;
-extern crate av_data;
-extern crate av_format;
-#[macro_use]
-extern crate nom;
-#[macro_use]
-extern crate log;
-
-#[cfg(test)]
-extern crate pretty_env_logger;
-#[cfg(test)]
-extern crate tempfile;
-
 mod common;
 pub mod demuxer;
 pub mod muxer;
