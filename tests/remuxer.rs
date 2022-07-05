@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::{Cursor, Write};
+use std::path::Path;
 use std::sync::Arc;
 
 use log::{debug, error};
@@ -15,9 +16,14 @@ use av_ivf::muxer::*;
 const IVF: &str = "assets/single_stream_av1.ivf";
 const IVF_OUTPUT: &str = "assets/out_av1.ivf";
 
+fn read_demux<P: AsRef<Path>>(path: P) -> DemuxerContext<IvfDemuxer, AccReader<File>> {
+    let input_file = File::open(path).unwrap();
+    let input_reader = AccReader::new(input_file);
+    DemuxerContext::new(IvfDemuxer::new(), input_reader)
+}
+
 fn demux_mux() {
-    let input_file = File::open(IVF).unwrap();
-    let mut demuxer = DemuxerContext::new(IvfDemuxer::new(), AccReader::new(input_file));
+    let mut demuxer = read_demux(IVF);
 
     demuxer.read_headers().unwrap();
 
@@ -61,12 +67,8 @@ fn demux_mux() {
 }
 
 fn check_mux() {
-    let demuxer_original_file = File::open(IVF).unwrap();
-    let mut demuxer_original =
-        DemuxerContext::new(IvfDemuxer::new(), AccReader::new(demuxer_original_file));
-
-    let demuxer_file = File::open(IVF_OUTPUT).unwrap();
-    let mut demuxer = DemuxerContext::new(IvfDemuxer::new(), AccReader::new(demuxer_file));
+    let mut demuxer_original = read_demux(IVF);
+    let mut demuxer = read_demux(IVF_OUTPUT);
 
     demuxer_original.read_headers().unwrap();
     demuxer.read_headers().unwrap();
