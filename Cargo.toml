@@ -7,6 +7,7 @@ include = ["src/**/*", "LICENSE", "README.md"]
 homepage = "https://github.com/rust-av/ivf-rs"
 repository = "https://github.com/rust-av/ivf-rs"
 description = "IVF muxer and demuxer"
+edition = "2021"
 
 [dependencies]
 nom = "7.1"
@@ -17,5 +18,5 @@ log = "0.4"
 
 [dev-dependencies]
 tempfile = "3"
-structopt = "0.3"
+clap = { version = "^3.2", features = ["derive"] }
 pretty_env_logger = "0.4"
