@@ -230,8 +230,10 @@ struct Des {
 }
 
 impl Descriptor for Des {
-    fn create(&self) -> Box<dyn Demuxer> {
-        Box::new(IvfDemuxer::new())
+    type OutputDemuxer = IvfDemuxer;
+
+    fn create(&self) -> Self::OutputDemuxer {
+        IvfDemuxer::new()
     }
     fn describe(&self) -> &Descr {
         &self.d
@@ -245,7 +247,7 @@ impl Descriptor for Des {
 }
 
 /// used by av context
-pub const IVF_DESC: &dyn Descriptor = &Des {
+pub const IVF_DESC: &dyn Descriptor<OutputDemuxer = IvfDemuxer> = &Des {
     d: Descr {
         name: "ivf-rs",
         demuxer: "ivf",
@@ -271,9 +273,8 @@ mod tests {
         let descriptor = IVF_DESC.create();
         let cursor = Cursor::new(IVF);
         let acc = AccReader::new(cursor);
-        let input = Box::new(acc);
 
-        let mut demuxer = Context::new(descriptor, input);
+        let mut demuxer = Context::new(descriptor, acc);
 
         match demuxer.read_headers() {
             Ok(_) => debug!("Headers read correctly"),
@@ -291,8 +292,7 @@ mod tests {
         let descriptor = IVF_DESC.create();
         let cursor = Cursor::new(IVF);
         let acc = AccReader::new(cursor);
-        let input = Box::new(acc);
-        let mut demuxer = Context::new(descriptor, input);
+        let mut demuxer = Context::new(descriptor, acc);
         demuxer.read_headers().unwrap();
 
         trace!("global info: {:#?}", demuxer.info);

@@ -10,27 +10,23 @@ use av_format::muxer::{Context as MuxerContext, Writer};
 use av_ivf::demuxer::*;
 use av_ivf::muxer::*;
 use std::fs::File;
-use std::path::Path;
+use std::io::{Cursor, Write};
 use std::sync::Arc;
 
 const IVF: &str = "assets/single_stream_av1.ivf";
 const IVF_OUTPUT: &str = "assets/out_av1.ivf";
 
-fn read_demux<P: AsRef<Path>>(path: P) -> DemuxerContext {
-    let input_file = File::open(path).unwrap();
-    let input_reader = AccReader::new(input_file);
-    let demuxer = Box::new(IvfDemuxer::new());
-    DemuxerContext::new(demuxer, Box::new(input_reader))
-}
-
 fn demux_mux() {
-    let mut demuxer = read_demux(IVF);
+    let input_file = File::open(IVF).unwrap();
+    let mut demuxer = DemuxerContext::new(IvfDemuxer::new(), AccReader::new(input_file));
 
     demuxer.read_headers().unwrap();
 
-    let output_file = File::create(IVF_OUTPUT).unwrap();
-    let mux = Box::new(IvfMuxer::new());
-    let mut muxer = MuxerContext::new(mux, Writer::Seekable(Box::new(output_file)));
+    let mut output_file = File::create(IVF_OUTPUT).unwrap();
+    let mut muxer = MuxerContext::new(
+        IvfMuxer::new(),
+        Writer::from_seekable(Cursor::new(Vec::new())),
+    );
 
     muxer.set_global_info(demuxer.info.clone()).unwrap();
     muxer.configure().unwrap();
@@ -59,11 +55,19 @@ fn demux_mux() {
             }
         }
     }
+
+    output_file
+        .write_all(&muxer.writer().seekable_object().unwrap().into_inner())
+        .unwrap();
 }
 
 fn check_mux() {
-    let mut demuxer_original = read_demux(IVF);
-    let mut demuxer = read_demux(IVF_OUTPUT);
+    let demuxer_original_file = File::open(IVF).unwrap();
+    let mut demuxer_original =
+        DemuxerContext::new(IvfDemuxer::new(), AccReader::new(demuxer_original_file));
+
+    let demuxer_file = File::open(IVF_OUTPUT).unwrap();
+    let mut demuxer = DemuxerContext::new(IvfDemuxer::new(), AccReader::new(demuxer_file));
 
     demuxer_original.read_headers().unwrap();
     demuxer.read_headers().unwrap();

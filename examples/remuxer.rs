@@ -11,6 +11,7 @@ use av_format::muxer::{Context as MuxerContext, Writer};
 use av_ivf::demuxer::*;
 use av_ivf::muxer::*;
 use std::fs::File;
+use std::io::{Cursor, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
 use structopt::StructOpt;
@@ -32,20 +33,18 @@ fn main() {
     let opt = Opt::from_args();
 
     let input = std::fs::File::open(opt.input).unwrap();
-
     let acc = AccReader::new(input);
-
-    let mut demuxer = DemuxerContext::new(Box::new(IvfDemuxer::new()), Box::new(acc));
+    let mut demuxer = DemuxerContext::new(IvfDemuxer::new(), acc);
 
     demuxer.read_headers().unwrap();
-
     trace!("global info: {:#?}", demuxer.info);
 
-    let output = File::create(opt.output).unwrap();
+    let mut output = File::create(opt.output).unwrap();
 
-    let mux = Box::new(IvfMuxer::new());
-
-    let mut muxer = MuxerContext::new(mux, Writer::Seekable(Box::new(output)));
+    let mut muxer = MuxerContext::new(
+        IvfMuxer::new(),
+        Writer::from_seekable(Cursor::new(Vec::new())),
+    );
 
     muxer.set_global_info(demuxer.info.clone()).unwrap();
     muxer.configure().unwrap();
@@ -74,4 +73,8 @@ fn main() {
             }
         }
     }
+
+    output
+        .write_all(&muxer.writer().seekable_object().unwrap().into_inner())
+        .unwrap();
 }

@@ -12,7 +12,7 @@ use av_data::rational::Rational32;
 use av_data::value::Value;
 use av_format::common::GlobalInfo;
 use av_format::error::*;
-use av_format::muxer::{Muxer, Writer};
+use av_format::muxer::{Muxer, WriteOwned, WriteSeek, Writer};
 use std::io::Write;
 use std::sync::Arc;
 
@@ -85,7 +85,10 @@ impl Muxer for IvfMuxer {
         }
     }
 
-    fn write_header(&mut self, buf: &mut Writer) -> Result<()> {
+    fn write_header<WO: WriteOwned, WS: WriteSeek>(
+        &mut self,
+        buf: &mut Writer<WO, WS>,
+    ) -> Result<()> {
         debug!("Write muxer header: {:?}", self);
 
         let codec = match self.codec {
@@ -111,7 +114,11 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn write_packet(&mut self, buf: &mut Writer, pkt: Arc<Packet>) -> Result<()> {
+    fn write_packet<WO: WriteOwned, WS: WriteSeek>(
+        &mut self,
+        buf: &mut Writer<WO, WS>,
+        pkt: Arc<Packet>,
+    ) -> Result<()> {
         trace!("Write packet: {:?}", pkt.pos);
 
         let mut frame_header = [0; 12];
@@ -125,7 +132,10 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn write_trailer(&mut self, _buf: &mut Writer) -> Result<()> {
+    fn write_trailer<WO: WriteOwned, WS: WriteSeek>(
+        &mut self,
+        _buf: &mut Writer<WO, WS>,
+    ) -> Result<()> {
         Ok(())
     }
 
@@ -144,13 +154,11 @@ mod tests {
     use super::*;
     use av_format::common::GlobalInfo;
     use av_format::muxer::{Context, Writer};
-    use std::fs::File;
+    use std::io::Cursor;
 
     #[test]
     fn mux() {
         let _ = pretty_env_logger::try_init();
-
-        let output: File = tempfile::tempfile().unwrap();
 
         let info = GlobalInfo {
             duration: None,
@@ -158,12 +166,18 @@ mod tests {
             streams: Vec::new(),
         };
 
-        let mux = Box::new(IvfMuxer::new());
-
-        let mut muxer = Context::new(mux, Writer::Seekable(Box::new(output)));
+        let mut muxer = Context::new(
+            IvfMuxer::new(),
+            Writer::from_seekable(Cursor::new(Vec::new())),
+        );
 
         muxer.set_global_info(info).unwrap();
         muxer.configure().unwrap();
         muxer.write_header().unwrap();
+
+        tempfile::tempfile()
+            .unwrap()
+            .write_all(&muxer.writer().seekable_object().unwrap().into_inner())
+            .unwrap();
     }
 }
