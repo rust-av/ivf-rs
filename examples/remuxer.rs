@@ -1,45 +1,43 @@
-#[macro_use]
-extern crate log;
-extern crate av_format;
-extern crate av_ivf;
-extern crate structopt;
+use std::fs::File;
+use std::io::{Cursor, Write};
+use std::path::PathBuf;
+use std::sync::Arc;
+
+use clap::Parser;
+use log::{debug, trace};
 
 use av_format::buffer::AccReader;
 use av_format::demuxer::Context as DemuxerContext;
 use av_format::demuxer::Event;
 use av_format::muxer::{Context as MuxerContext, Writer};
+
 use av_ivf::demuxer::*;
 use av_ivf::muxer::*;
-use std::fs::File;
-use std::io::{Cursor, Write};
-use std::path::PathBuf;
-use std::sync::Arc;
-use structopt::StructOpt;
 
-#[derive(StructOpt, Debug)]
-#[structopt(name = "ivf remux")]
+#[derive(Parser, Debug)]
+#[clap(name = "ivf remux")]
 /// Simple Audio Video Encoding tool
-struct Opt {
+struct Opts {
     /// Input file
-    #[structopt(short = "i", parse(from_os_str))]
+    #[clap(short = 'i', value_parser)]
     input: PathBuf,
     /// Output file
-    #[structopt(short = "o", parse(from_os_str))]
+    #[clap(short = 'o', value_parser)]
     output: PathBuf,
 }
 
 fn main() {
     let _ = pretty_env_logger::try_init();
-    let opt = Opt::from_args();
+    let opts = Opts::parse();
 
-    let input = std::fs::File::open(opt.input).unwrap();
+    let input = std::fs::File::open(opts.input).unwrap();
     let acc = AccReader::new(input);
     let mut demuxer = DemuxerContext::new(IvfDemuxer::new(), acc);
 
     demuxer.read_headers().unwrap();
     trace!("global info: {:#?}", demuxer.info);
 
-    let mut output = File::create(opt.output).unwrap();
+    let mut output = File::create(opts.output).unwrap();
 
     let mut muxer = MuxerContext::new(
         IvfMuxer::new(),
