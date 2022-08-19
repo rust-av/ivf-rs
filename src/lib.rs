@@ -13,6 +13,6 @@
 //! This projects relies on [rust-av](https://github.com/rust-av/rust-av) toolkit
 //!
 
-mod common;
+pub mod common;
 pub mod demuxer;
 pub mod muxer;

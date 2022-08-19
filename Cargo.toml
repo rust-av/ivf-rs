@@ -1,6 +1,6 @@
 [package]
 name = "av-ivf"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["gibix <gibix@riseup.net>"]
 license = "MIT"
 include = ["src/**/*", "LICENSE", "README.md"]
@@ -8,13 +8,14 @@ homepage = "https://github.com/rust-av/ivf-rs"
 repository = "https://github.com/rust-av/ivf-rs"
 description = "IVF muxer and demuxer"
 edition = "2021"
+rust-version = "1.56.1"
 
 [dependencies]
-nom = "7.1"
 av-bitstream = "0.1.2"
 av-format = "0.5"
 av-data = "0.3"
 log = "0.4"
+nom = "7.1"
 
 [dev-dependencies]
 tempfile = "3"

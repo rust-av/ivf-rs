@@ -1,5 +1,7 @@
+pub use av_format::common::GlobalInfo;
+
 #[derive(Copy, Clone, Debug)]
-pub enum Codec {
+pub(crate) enum Codec {
     VP8,
     VP9,
     AV1,
