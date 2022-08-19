@@ -149,8 +149,45 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn set_option<'a>(&mut self, _key: &str, _val: Value<'a>) -> Result<()> {
+    fn set_option<'a>(&mut self, key: &str, val: Value<'a>) -> Result<()> {
+        match key {
+            "frame_rate" => {
+                self.frame_rate = get_val_rational(val)?;
+            }
+            "width" => {
+                self.width = get_val_int(val)? as u16;
+            }
+            "height" => {
+                self.height = get_val_int(val)? as u16;
+            }
+            "scale" => {
+                self.scale = get_val_int(val)? as u32;
+            }
+            "duration" => {
+                self.duration = get_val_int(val)? as u32;
+            }
+            _ => {
+                return Err(av_format::error::Error::InvalidData);
+            }
+        };
         Ok(())
+    }
+}
+
+fn get_val_rational(val: Value<'_>) -> Result<Rational32> {
+    match val {
+        Value::I64(val) => Ok(Rational32::new(val as i32, 1)),
+        Value::U64(val) => Ok(Rational32::new(val as i32, 1)),
+        Value::Pair(numer, denom) => Ok(Rational32::new(numer as i32, denom as i32)),
+        _ => Err(av_format::error::Error::InvalidData),
+    }
+}
+
+fn get_val_int(val: Value<'_>) -> Result<i64> {
+    match val {
+        Value::I64(val) => Ok(val),
+        Value::U64(val) => Ok(val as i64),
+        _ => Err(av_format::error::Error::InvalidData),
     }
 }
 
