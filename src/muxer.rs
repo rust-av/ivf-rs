@@ -16,7 +16,8 @@ use av_data::rational::Rational32;
 use av_data::value::Value;
 use av_format::common::GlobalInfo;
 use av_format::error::*;
-use av_format::muxer::{Muxer, WriteOwned, WriteSeek, Writer};
+pub use av_format::muxer::Muxer;
+pub use av_format::muxer::{Context, WriteOwned, WriteSeek, Writer};
 
 use crate::common::Codec;
 

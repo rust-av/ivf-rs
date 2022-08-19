@@ -22,9 +22,10 @@ use av_data::packet::Packet;
 use av_data::params::{CodecParams, MediaKind, VideoInfo};
 use av_data::rational::Rational64;
 use av_data::timeinfo::TimeInfo;
-use av_format::buffer::Buffered;
+pub use av_format::buffer::{AccReader, Buffered};
 use av_format::common::GlobalInfo;
-use av_format::demuxer::{Demuxer, Event};
+use av_format::demuxer::Event;
+pub use av_format::demuxer::{Context, Demuxer};
 use av_format::demuxer::{Descr, Descriptor};
 use av_format::error::*;
 use av_format::stream::Stream;
@@ -50,7 +51,7 @@ pub struct IvfHeader {
     nframe: u32,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct IvfFrame {
     size: u32,
     pos: u64,
@@ -143,28 +144,23 @@ impl Demuxer for IvfDemuxer {
     }
 }
 
-/// take data ownership
-pub fn parse_binary_data(input: &[u8], size: u64) -> IResult<&[u8], Vec<u8>> {
-    take(size as usize)(input).map(|(input, s)| (input, s.to_vec()))
-}
-
 /// u16 nom help function that maps to av-bitstream
-pub fn parse_u16(input: &[u8]) -> IResult<&[u8], u16> {
+fn parse_u16(input: &[u8]) -> IResult<&[u8], u16> {
     Ok((&input[2..], get_u16l(&input[0..2])))
 }
 
 /// u32 nom help function that maps to av-bitstream
-pub fn parse_u32(input: &[u8]) -> IResult<&[u8], u32> {
+fn parse_u32(input: &[u8]) -> IResult<&[u8], u32> {
     Ok((&input[4..], get_u32l(&input[0..4])))
 }
 
 /// u64 nom help function that maps to av-bitstream
-pub fn parse_u64(input: &[u8]) -> IResult<&[u8], u64> {
+fn parse_u64(input: &[u8]) -> IResult<&[u8], u64> {
     Ok((&input[8..], get_u64l(&input[0..8])))
 }
 
 /// use ErrorKind::Tag that could be a bit confusing
-pub fn parse_codec(input: &[u8]) -> IResult<&[u8], Codec> {
+fn parse_codec(input: &[u8]) -> IResult<&[u8], Codec> {
     let codec = match &input[0..4] {
         b"VP80" => Codec::VP8,
         b"VP90" => Codec::VP9,
@@ -181,7 +177,7 @@ pub fn parse_codec(input: &[u8]) -> IResult<&[u8], Codec> {
 }
 
 // TODO: validate values
-pub fn ivf_header(input: &[u8]) -> IResult<&[u8], IvfHeader> {
+fn ivf_header(input: &[u8]) -> IResult<&[u8], IvfHeader> {
     tuple((
         tag("DKIF"),
         parse_u16,
@@ -213,7 +209,7 @@ pub fn ivf_header(input: &[u8]) -> IResult<&[u8], IvfHeader> {
 }
 
 // (frame_size > 256 * 1024 * 1024)
-pub fn ivf_frame(input: &[u8]) -> IResult<&[u8], IvfFrame> {
+fn ivf_frame(input: &[u8]) -> IResult<&[u8], IvfFrame> {
     tuple((parse_u32, parse_u64))(input)
         .and_then(|(input, (size, pos))| {
             let (input, data) = take(size)(input)?;
