@@ -1,6 +1,6 @@
 [package]
 name = "av-ivf"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["gibix <gibix@riseup.net>"]
 license = "MIT"
 include = ["src/**/*", "LICENSE", "README.md"]
@@ -11,9 +11,9 @@ edition = "2021"
 rust-version = "1.56.1"
 
 [dependencies]
-av-bitstream = "0.1.2"
-av-format = "0.5"
-av-data = "0.3"
+av-bitstream = "0.2.0"
+av-format = "0.6.0"
+av-data = "0.4.0"
 log = "0.4"
 nom = "7.1"
 

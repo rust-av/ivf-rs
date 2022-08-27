@@ -73,6 +73,6 @@ fn main() {
     }
 
     output
-        .write_all(&muxer.writer().seekable_object().unwrap().into_inner())
+        .write_all(muxer.writer().seekable_object().unwrap().get_ref())
         .unwrap();
 }

@@ -4,7 +4,7 @@
 //!
 //!
 
-use std::io::Write;
+use std::io::{Seek, Write};
 use std::sync::Arc;
 
 use log::{debug, trace};
@@ -17,7 +17,7 @@ use av_data::value::Value;
 use av_format::common::GlobalInfo;
 use av_format::error::*;
 pub use av_format::muxer::Muxer;
-pub use av_format::muxer::{Context, WriteOwned, WriteSeek, Writer};
+pub use av_format::muxer::{Context, Writer};
 
 use crate::common::Codec;
 
@@ -90,7 +90,7 @@ impl Muxer for IvfMuxer {
         }
     }
 
-    fn write_header<WO: WriteOwned, WS: WriteSeek>(
+    fn write_header<WO: Write, WS: Write + Seek>(
         &mut self,
         buf: &mut Writer<WO, WS>,
     ) -> Result<()> {
@@ -119,7 +119,7 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn write_packet<WO: WriteOwned, WS: WriteSeek>(
+    fn write_packet<WO: Write, WS: Write + Seek>(
         &mut self,
         buf: &mut Writer<WO, WS>,
         pkt: Arc<Packet>,
@@ -137,7 +137,7 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn write_trailer<WO: WriteOwned, WS: WriteSeek>(
+    fn write_trailer<WO: Write, WS: Write + Seek>(
         &mut self,
         _buf: &mut Writer<WO, WS>,
     ) -> Result<()> {
@@ -221,7 +221,7 @@ mod tests {
 
         tempfile::tempfile()
             .unwrap()
-            .write_all(&muxer.writer().seekable_object().unwrap().into_inner())
+            .write_all(muxer.writer().seekable_object().unwrap().get_ref())
             .unwrap();
     }
 }
