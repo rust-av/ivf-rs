@@ -130,7 +130,8 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn write_trailer<W: Write>(&mut self, _buf: &mut Writer<W>) -> Result<()> {
+    fn write_trailer<W: Write>(&mut self, buf: &mut Writer<W>) -> Result<()> {
+        buf.flush()?;
         Ok(())
     }
 
