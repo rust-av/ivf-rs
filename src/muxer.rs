@@ -4,7 +4,7 @@
 //!
 //!
 
-use std::io::{Seek, Write};
+use std::io::Write;
 use std::sync::Arc;
 
 use log::{debug, trace};
@@ -90,10 +90,7 @@ impl Muxer for IvfMuxer {
         }
     }
 
-    fn write_header<WO: Write, WS: Write + Seek>(
-        &mut self,
-        buf: &mut Writer<WO, WS>,
-    ) -> Result<()> {
+    fn write_header<W: Write>(&mut self, buf: &mut Writer<W>) -> Result<()> {
         debug!("Write muxer header: {:?}", self);
 
         let codec = match self.codec {
@@ -119,11 +116,7 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn write_packet<WO: Write, WS: Write + Seek>(
-        &mut self,
-        buf: &mut Writer<WO, WS>,
-        pkt: Arc<Packet>,
-    ) -> Result<()> {
+    fn write_packet<W: Write>(&mut self, buf: &mut Writer<W>, pkt: Arc<Packet>) -> Result<()> {
         trace!("Write packet: {:?}", pkt.pos);
 
         let mut frame_header = [0; 12];
@@ -137,10 +130,7 @@ impl Muxer for IvfMuxer {
         Ok(())
     }
 
-    fn write_trailer<WO: Write, WS: Write + Seek>(
-        &mut self,
-        _buf: &mut Writer<WO, WS>,
-    ) -> Result<()> {
+    fn write_trailer<W: Write>(&mut self, _buf: &mut Writer<W>) -> Result<()> {
         Ok(())
     }
 
@@ -210,10 +200,7 @@ mod tests {
             streams: Vec::new(),
         };
 
-        let mut muxer = Context::new(
-            IvfMuxer::new(),
-            Writer::from_seekable(Cursor::new(Vec::new())),
-        );
+        let mut muxer = Context::new(IvfMuxer::new(), Writer::new(Cursor::new(Vec::new())));
 
         muxer.set_global_info(info).unwrap();
         muxer.configure().unwrap();
@@ -221,7 +208,7 @@ mod tests {
 
         tempfile::tempfile()
             .unwrap()
-            .write_all(muxer.writer().seekable_object().unwrap().get_ref())
+            .write_all(muxer.writer().as_ref().0.get_ref())
             .unwrap();
     }
 }

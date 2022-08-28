@@ -28,10 +28,7 @@ fn demux_mux() {
     demuxer.read_headers().unwrap();
 
     let mut output_file = File::create(IVF_OUTPUT).unwrap();
-    let mut muxer = MuxerContext::new(
-        IvfMuxer::new(),
-        Writer::from_seekable(Cursor::new(Vec::new())),
-    );
+    let mut muxer = MuxerContext::new(IvfMuxer::new(), Writer::new(Cursor::new(Vec::new())));
 
     muxer.set_global_info(demuxer.info.clone()).unwrap();
     muxer.configure().unwrap();
@@ -62,7 +59,7 @@ fn demux_mux() {
     }
 
     output_file
-        .write_all(muxer.writer().seekable_object().unwrap().get_ref())
+        .write_all(muxer.writer().as_ref().0.get_ref())
         .unwrap();
 }
 
